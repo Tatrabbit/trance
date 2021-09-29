@@ -73,6 +73,8 @@ enum wxRibbonArtSetting
     wxRIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR,
     wxRIBBON_ART_GALLERY_ITEM_BORDER_COLOUR,
     wxRIBBON_ART_TAB_LABEL_COLOUR,
+    wxRIBBON_ART_TAB_ACTIVE_LABEL_COLOUR,
+    wxRIBBON_ART_TAB_HOVER_LABEL_COLOUR,
     wxRIBBON_ART_TAB_SEPARATOR_COLOUR,
     wxRIBBON_ART_TAB_SEPARATOR_GRADIENT_COLOUR,
     wxRIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
@@ -88,6 +90,8 @@ enum wxRibbonArtSetting
     wxRIBBON_ART_TAB_BORDER_COLOUR,
     wxRIBBON_ART_PANEL_BORDER_COLOUR,
     wxRIBBON_ART_PANEL_BORDER_GRADIENT_COLOUR,
+    wxRIBBON_ART_PANEL_HOVER_BORDER_COLOUR,
+    wxRIBBON_ART_PANEL_HOVER_BORDER_GRADIENT_COLOUR,
     wxRIBBON_ART_PANEL_MINIMISED_BORDER_COLOUR,
     wxRIBBON_ART_PANEL_MINIMISED_BORDER_GRADIENT_COLOUR,
     wxRIBBON_ART_PANEL_LABEL_BACKGROUND_COLOUR,
@@ -381,11 +385,17 @@ public:
                         wxRibbonButtonKind kind,
                         wxRibbonButtonBarButtonState size,
                         const wxString& label,
+                        wxCoord text_min_width,
                         wxSize bitmap_size_large,
                         wxSize bitmap_size_small,
                         wxSize* button_size,
                         wxRect* normal_region,
                         wxRect* dropdown_region) = 0;
+
+    virtual wxCoord GetButtonBarButtonTextWidth(
+                        wxDC& dc, const wxString& label,
+                        wxRibbonButtonKind kind,
+                        wxRibbonButtonBarButtonState size) = 0;
 
     virtual wxSize GetMinimisedPanelMinimumSize(
                         wxDC& dc,
@@ -584,11 +594,17 @@ public:
                         wxRibbonButtonKind kind,
                         wxRibbonButtonBarButtonState size,
                         const wxString& label,
+                        wxCoord text_min_width,
                         wxSize bitmap_size_large,
                         wxSize bitmap_size_small,
                         wxSize* button_size,
                         wxRect* normal_region,
                         wxRect* dropdown_region) wxOVERRIDE;
+
+    wxCoord GetButtonBarButtonTextWidth(
+                        wxDC& dc, const wxString& label,
+                        wxRibbonButtonKind kind,
+                        wxRibbonButtonBarButtonState size) wxOVERRIDE;
 
     wxSize GetMinimisedPanelMinimumSize(
                         wxDC& dc,
@@ -656,6 +672,8 @@ protected:
     wxColour m_button_bar_label_colour;
     wxColour m_button_bar_label_disabled_colour;
     wxColour m_tab_label_colour;
+    wxColour m_tab_active_label_colour;
+    wxColour m_tab_hover_label_colour;
     wxColour m_tab_separator_colour;
     wxColour m_tab_separator_gradient_colour;
     wxColour m_tab_active_background_colour;
@@ -740,6 +758,8 @@ protected:
     wxPen m_page_border_pen;
     wxPen m_panel_border_pen;
     wxPen m_panel_border_gradient_pen;
+    wxPen m_panel_hover_border_pen;
+    wxPen m_panel_hover_border_gradient_pen;
     wxPen m_panel_minimised_border_pen;
     wxPen m_panel_minimised_border_gradient_pen;
     wxPen m_panel_hover_button_border_pen;

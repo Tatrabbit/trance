@@ -105,8 +105,8 @@ enum
                                        // also sets wxFILE_EXISTS_NO_FOLLOW as
                                        // it would never be satisfied otherwise
     wxFILE_EXISTS_DEVICE    = 0x0008,  // check for existence of a device
-    wxFILE_EXISTS_FIFO      = 0x0016,  // check for existence of a FIFO
-    wxFILE_EXISTS_SOCKET    = 0x0032,  // check for existence of a socket
+    wxFILE_EXISTS_FIFO      = 0x0010,  // check for existence of a FIFO
+    wxFILE_EXISTS_SOCKET    = 0x0020,  // check for existence of a socket
                                        // gap for future types
     wxFILE_EXISTS_NO_FOLLOW = 0x1000,  // don't dereference a contained symlink
     wxFILE_EXISTS_ANY       = 0x1FFF   // check for existence of anything
@@ -133,7 +133,7 @@ public:
     wxFileName(const wxFileName& filepath) { Assign(filepath); }
 
         // from a full filename: if it terminates with a '/', a directory path
-        // is contructed (the name will be empty), otherwise a file name and
+        // is constructed (the name will be empty), otherwise a file name and
         // extension are extracted from it
     wxFileName( const wxString& fullpath, wxPathFormat format = wxPATH_NATIVE )
         { Assign( fullpath, format ); m_dontFollowLinks = false; }
@@ -258,6 +258,11 @@ public:
         // values
     bool SetPermissions(int permissions);
 
+    // Returns the native path for a file URL
+    static wxFileName URLToFileName(const wxString& url);
+
+    // Returns the file URL for a native path
+    static wxString FileNameToURL(const wxFileName& filename);
 
     // time functions
 #if wxUSE_DATETIME
@@ -384,6 +389,9 @@ public:
         return !m_dontFollowLinks;
     }
 
+    // Resolve a wxFileName object representing a link to its target
+    wxFileName ResolveLink();
+
 #if defined(__WIN32__) && wxUSE_OLE
         // if the path is a shortcut, return the target and optionally,
         // the arguments
@@ -401,7 +409,7 @@ public:
         //    fn.ReplaceEnvVariable("OPENWINHOME");
         //         // now fn.GetFullPath() == "$OPENWINHOME/lib/someFile"
     bool ReplaceEnvVariable(const wxString& envname,
-                            const wxString& replacementFmtString = "$%s",
+                            const wxString& replacementFmtString = wxS("$%s"),
                             wxPathFormat format = wxPATH_NATIVE);
 
         // replaces, if present in the path, the home directory for the given user
@@ -570,12 +578,12 @@ public:
 
         // returns the size in a human readable form
     wxString
-    GetHumanReadableSize(const wxString& nullsize = wxGetTranslation("Not available"),
+    GetHumanReadableSize(const wxString& nullsize = wxGetTranslation(wxASCII_STR("Not available")),
                          int precision = 1,
                          wxSizeConvention conv = wxSIZE_CONV_TRADITIONAL) const;
     static wxString
     GetHumanReadableSize(const wxULongLong& sz,
-                         const wxString& nullsize = wxGetTranslation("Not available"),
+                         const wxString& nullsize = wxGetTranslation(wxASCII_STR("Not available")),
                          int precision = 1,
                          wxSizeConvention conv = wxSIZE_CONV_TRADITIONAL);
 #endif // wxUSE_LONGLONG

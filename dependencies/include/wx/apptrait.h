@@ -73,7 +73,6 @@ public:
     virtual wxRendererNative *CreateRenderer() = 0;
 
     // wxStandardPaths object is normally the same for wxBase and wxGUI
-    // except in the case of wxMac and wxCocoa
     virtual wxStandardPaths& GetStandardPaths();
 
 
@@ -88,6 +87,16 @@ public:
     //
     // return true to suppress subsequent asserts, false to continue as before
     virtual bool ShowAssertDialog(const wxString& msg) = 0;
+
+    // show the message safely to the user, i.e. show it in a message box if
+    // possible (even in a console application!) or return false if we can't do
+    // it (e.g. GUI is not initialized at all)
+    //
+    // note that this function can be called even when wxApp doesn't exist, as
+    // it's supposed to be always safe to call -- hence the name
+    //
+    // return true if the message box was shown, false if nothing was done
+    virtual bool SafeMessageBox(const wxString& text, const wxString& title) = 0;
 
     // return true if fprintf(stderr) goes somewhere, false otherwise
     virtual bool HasStderr() = 0;
@@ -130,7 +139,9 @@ public:
     // runtime (not compile-time) version.
     // returns wxPORT_BASE for console applications and one of the remaining
     // wxPORT_* values for GUI applications.
-    virtual wxPortId GetToolkitVersion(int *majVer = NULL, int *minVer = NULL) const = 0;
+    virtual wxPortId GetToolkitVersion(int *majVer = NULL,
+                                       int *minVer = NULL,
+                                       int *microVer = NULL) const = 0;
 
     // return true if the port is using wxUniversal for the GUI, false if not
     virtual bool IsUsingUniversalWidgets() const = 0;
@@ -153,11 +164,13 @@ public:
     }
 
 
-protected:
 #if wxUSE_STACKWALKER
-    // utility function: returns the stack frame as a plain wxString
+    // Helper function mostly useful for derived classes ShowAssertDialog()
+    // implementation.
+    //
+    // Returns the stack frame as a plain (and possibly empty) wxString.
     virtual wxString GetAssertStackTrace();
-#endif
+#endif // wxUSE_STACKWALKER
 
 private:
     static wxSocketManager *ms_manager;
@@ -193,7 +206,7 @@ class WXDLLIMPEXP_BASE wxConsoleAppTraitsBase : public wxAppTraits
 {
 public:
 #if !wxUSE_CONSOLE_EVENTLOOP
-    virtual wxEventLoopBase *CreateEventLoop() { return NULL; }
+    virtual wxEventLoopBase *CreateEventLoop() wxOVERRIDE { return NULL; }
 #endif // !wxUSE_CONSOLE_EVENTLOOP
 
 #if wxUSE_LOG
@@ -207,15 +220,20 @@ public:
 
     virtual bool ShowAssertDialog(const wxString& msg) wxOVERRIDE;
     virtual bool HasStderr() wxOVERRIDE;
+    virtual bool SafeMessageBox(const wxString& text,
+                                const wxString& title) wxOVERRIDE;
 
     // the GetToolkitVersion for console application is always the same
-    virtual wxPortId GetToolkitVersion(int *verMaj = NULL, int *verMin = NULL) const wxOVERRIDE
+    wxPortId GetToolkitVersion(int *verMaj = NULL,
+                               int *verMin = NULL,
+                               int *verMicro = NULL) const wxOVERRIDE
     {
         // no toolkits (wxBase is for console applications without GUI support)
         // NB: zero means "no toolkit", -1 means "not initialized yet"
         //     so we must use zero here!
         if (verMaj) *verMaj = 0;
         if (verMin) *verMin = 0;
+        if (verMicro) *verMicro = 0;
         return wxPORT_BASE;
     }
 
@@ -243,6 +261,13 @@ public:
 
     virtual bool ShowAssertDialog(const wxString& msg) wxOVERRIDE;
     virtual bool HasStderr() wxOVERRIDE;
+
+    // Win32 has its own implementation using native message box directly in
+    // the base class, don't override it.
+#ifndef __WIN32__
+    virtual bool SafeMessageBox(const wxString& text,
+                                const wxString& title) wxOVERRIDE;
+#endif // !__WIN32__
 
     virtual bool IsUsingUniversalWidgets() const wxOVERRIDE
     {
