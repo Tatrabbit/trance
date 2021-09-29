@@ -7,11 +7,11 @@
 #include <creator/main.h>
 #include <algorithm>
 #include <ctime>
-#include <filesystem>
 #include <iomanip>
 #include <random>
 #include <sstream>
 #include <thread>
+#include <boost/filesystem.hpp>
 
 #pragma warning(push, 0)
 #include <common/trance.pb.h>
@@ -482,7 +482,7 @@ ThemePage::ThemePage(wxNotebook* parent, CreatorFrame& creator_frame, trance_pb:
   });
 
   _button_open->Bind(wxEVT_COMMAND_BUTTON_CLICKED, [&](wxCommandEvent&) {
-    auto root = std::tr2::sys::path{_session_path}.parent_path().string();
+    auto root = boost::filesystem::path{_session_path}.parent_path().string();
     for (const auto& pair : _tree_lookup) {
       if (pair.second == _tree->GetSelection()) {
         auto path = root + "\\" + pair.first;
@@ -493,7 +493,7 @@ ThemePage::ThemePage(wxNotebook* parent, CreatorFrame& creator_frame, trance_pb:
   });
 
   _button_rename->Bind(wxEVT_COMMAND_BUTTON_CLICKED, [&](wxCommandEvent&) {
-    auto root = std::tr2::sys::path{_session_path}.parent_path().string();
+    auto root = boost::filesystem::path{_session_path}.parent_path().string();
     std::string old_relative_path;
     for (const auto& pair : _tree_lookup) {
       if (pair.second == _tree->GetSelection()) {
@@ -514,23 +514,23 @@ ThemePage::ThemePage(wxNotebook* parent, CreatorFrame& creator_frame, trance_pb:
       return;
     }
     auto rename_file = [&](const std::string old_abs, const std::string& new_abs) {
-      auto old_path = std::tr2::sys::path{old_abs};
-      auto new_path = std::tr2::sys::path{new_abs};
-      std::error_code ec;
-      auto parent = std::tr2::sys::canonical(new_path.parent_path(), ec);
-      if (!std::tr2::sys::is_directory(parent) &&
-          (ec || !std::tr2::sys::create_directories(parent))) {
+      auto old_path = boost::filesystem::path{old_abs};
+      auto new_path = boost::filesystem::path{new_abs};
+      boost::system::error_code ec;
+      auto parent = boost::filesystem::canonical(new_path.parent_path(), ec);
+      if (!boost::filesystem::is_directory(parent) &&
+          (ec || !boost::filesystem::create_directories(parent))) {
         wxMessageBox("Couldn't create directory " + parent.string(), "", wxICON_ERROR, this);
         return false;
       }
-      bool exists = std::tr2::sys::exists(new_path, ec);
+      bool exists = boost::filesystem::exists(new_path, ec);
       if (exists || ec) {
         wxMessageBox(
             "Couldn't rename " + old_path.string() + ": " + new_path.string() + " already exists",
             "", wxICON_ERROR, this);
         return false;
       }
-      std::tr2::sys::rename(old_path, new_path, ec);
+      boost::filesystem::rename(old_path, new_path, ec);
       if (ec) {
         wxMessageBox("Couldn't rename " + old_path.string() + " to " + new_path.string(), "",
                      wxICON_ERROR, this);
@@ -539,9 +539,9 @@ ThemePage::ThemePage(wxNotebook* parent, CreatorFrame& creator_frame, trance_pb:
       for (auto& pair : *session.mutable_theme_map()) {
         auto& theme = pair.second;
         auto c = [&](google::protobuf::RepeatedPtrField<std::string>& field) {
-          auto it = std::find(field.begin(), field.end(), make_relative(root, old_abs));
+          auto it = std::find(field.begin(), field.end(), boost::filesystem::relative(old_abs, root));
           if (it != field.end()) {
-            *field.Add() = make_relative(root, new_abs);
+            *field.Add() = boost::filesystem::relative(new_abs, root).string();
           }
         };
         c(*theme.mutable_font_path());
@@ -552,15 +552,15 @@ ThemePage::ThemePage(wxNotebook* parent, CreatorFrame& creator_frame, trance_pb:
     };
     auto old_root = root + "/" + old_relative_path;
     auto new_root = root + "/" + new_relative_path;
-    if (std::tr2::sys::is_regular_file(old_root)) {
+    if (boost::filesystem::is_regular_file(old_root)) {
       rename_file(old_root, new_root);
     } else {
-      for (auto it = std::tr2::sys::recursive_directory_iterator(old_root);
-           it != std::tr2::sys::recursive_directory_iterator(); ++it) {
-        if (!std::tr2::sys::is_regular_file(it->status())) {
+      for (auto it = boost::filesystem::recursive_directory_iterator(old_root);
+          it != boost::filesystem::recursive_directory_iterator(); ++it) {
+        if (!boost::filesystem::is_regular_file(it->status())) {
           continue;
         }
-        auto rel_rel = make_relative(old_root, it->path().string());
+        auto rel_rel = boost::filesystem::relative(it->path(), old_root).string();
         if (!rename_file(old_root + "/" + rel_rel, new_root + "/" + rel_rel)) {
           break;
         }
@@ -840,15 +840,15 @@ void ThemePage::RefreshDirectory(const std::string& directory)
   std::size_t file_count = 0;
   std::size_t unused_count = 0;
   for (const auto& path_str : paths) {
-    std::tr2::sys::path path{path_str};
-    for (auto it = ++path.begin(); it != path.end(); ++it) {
-      std::tr2::sys::path component;
-      std::tr2::sys::path parent;
+    boost::filesystem::path path{path_str};
+    for (auto it = path.begin(); it != path.end(); ++it) {
+      boost::filesystem::path component;
+      boost::filesystem::path parent = L".";
       for (auto jt = path.begin(); jt != it; ++jt) {
-        component.append(*jt);
-        parent.append(*jt);
+        component.append(jt->string());
+        parent.append(jt->string());
       }
-      component.append(*it);
+      component.append(it->string());
 
       if (_tree_lookup.find(component.string()) == _tree_lookup.end()) {
         wxClientData* data = nullptr;
@@ -957,7 +957,7 @@ void ThemePage::RefreshTree(wxTreeListItem item)
   auto data = _tree->GetItemData(item);
   if (data != nullptr) {
     std::string path = ((const wxStringClientData*) data)->GetData();
-    auto root = std::tr2::sys::path{_session_path}.parent_path().string();
+    auto root = boost::filesystem::path{_session_path}.parent_path().string();
     const auto& images = _complete_theme->image_path();
     const auto& anims = _complete_theme->animation_path();
     const auto& fonts = _complete_theme->font_path();
@@ -1007,7 +1007,7 @@ void ThemePage::GenerateFontPreview()
   }
   std::string text;
   if (_current_text_line.empty()) {
-    text = (--std::tr2::sys::path{_current_font}.end())->string();
+    text = (--boost::filesystem::path{_current_font}.end())->string();
   } else {
     text = _current_text_line;
   }

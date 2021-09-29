@@ -1,6 +1,6 @@
 #ifndef TRANCE_SRC_COMMON_COMMON_H
 #define TRANCE_SRC_COMMON_COMMON_H
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <string>
 
 static const std::string DEFAULT_SESSION_PATH = "default.session";
@@ -11,12 +11,12 @@ static const uint32_t DEFAULT_BORDER = 2;
 
 inline std::string get_system_config_path(const std::string& directory)
 {
-  return (std::tr2::sys::path{directory} / SYSTEM_CONFIG_PATH).string();
+  return (boost::filesystem::path{directory} / SYSTEM_CONFIG_PATH).string();
 }
 
 inline std::string get_trance_exe_path(const std::string& directory)
 {
-  return (std::tr2::sys::path{directory} / TRANCE_EXE_PATH).string();
+  return (boost::filesystem::path{directory} / TRANCE_EXE_PATH).string();
 }
 
 inline std::string format_time(uint64_t seconds, bool precise)

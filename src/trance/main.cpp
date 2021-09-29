@@ -11,12 +11,12 @@
 #include <trance/render/video_export.h>
 #include <trance/theme_bank.h>
 #include <chrono>
-#include <filesystem>
 #include <iostream>
 #include <map>
 #include <set>
 #include <string>
 #include <thread>
+#include <boost/filesystem.hpp>
 
 #pragma warning(push, 0)
 #include <common/trance.pb.h>
@@ -466,7 +466,7 @@ int main(int argc, char** argv)
     save_system(system, system_path);
   }
 
-  auto root_path = std::tr2::sys::path{session_path}.parent_path().string();
+  auto root_path = boost::filesystem::path{session_path}.parent_path().string();
   if (FLAGS_validate_session) {
     return validate_session(root_path, session);
   }

@@ -9,7 +9,7 @@
 #include <creator/settings.h>
 #include <creator/theme.h>
 #include <creator/variables.h>
-#include <filesystem>
+#include <boost/filesystem.hpp>
 
 #pragma warning(push, 0)
 #include <wx/app.h>
@@ -114,7 +114,7 @@ CreatorFrame::CreatorFrame(const std::string& executable_path, const std::string
            return;
          }
          _session = get_default_session();
-         std::tr2::sys::path path{std::string{dialog.GetPath()}};
+         boost::filesystem::path path{std::wstring{dialog.GetPath()}};
          search_resources(_session, path.parent_path().string());
          SetSessionPath(std::string{dialog.GetPath()});
          SetStatusText("Generated default session for " + path.parent_path().string());
@@ -184,7 +184,7 @@ CreatorFrame::CreatorFrame(const std::string& executable_path, const std::string
          if (!ConfirmDiscardChanges()) {
            return;
          }
-         std::tr2::sys::path path = _session_path;
+         boost::filesystem::path path = _session_path;
          wxFileDialog dialog{this,
                              "Choose archive location",
                              path.parent_path().string(),
@@ -296,7 +296,7 @@ void CreatorFrame::ExportArchive(const std::string& path)
 
 void CreatorFrame::RefreshDirectory()
 {
-  auto parent = std::tr2::sys::path{_session_path}.parent_path().string();
+  auto parent = boost::filesystem::path{_session_path}.parent_path().string();
   _theme_page->RefreshDirectory(parent);
   _playlist_page->RefreshDirectory(parent);
   _theme_page->RefreshData();
@@ -653,7 +653,7 @@ public:
   bool OnInit() override
   {
     wxApp::OnInit();
-    std::tr2::sys::path path{std::string(wxStandardPaths::Get().GetExecutablePath())};
+    boost::filesystem::path path{std::wstring(wxStandardPaths::Get().GetExecutablePath())};
     _frame = new CreatorFrame{path.parent_path().string(), _parameter};
     SetTopWindow(_frame);
     return true;

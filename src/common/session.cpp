@@ -1,8 +1,8 @@
 #include <common/session.h>
 #include <common/util.h>
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
+#include <boost/filesystem.hpp>
 
 #pragma warning(push, 0)
 #include <google/protobuf/text_format.h>
@@ -236,35 +236,7 @@ namespace
     std::ofstream f{path};
     f << str;
   }
-
-  std::tr2::sys::path make_relative(const std::tr2::sys::path& from, const std::tr2::sys::path& to)
-  {
-    auto cfrom = std::tr2::sys::canonical(from);
-    auto cto = std::tr2::sys::canonical(to);
-
-    auto from_it = cfrom.begin();
-    auto to_it = cto.begin();
-    while (from_it != cfrom.end() && to_it != cto.end() && *from_it == *to_it) {
-      ++from_it;
-      ++to_it;
-    }
-    if (from_it != cfrom.end()) {
-      return to;
-    }
-    std::tr2::sys::path result = ".";
-    while (to_it != cto.end()) {
-      result.append(*to_it);
-      ++to_it;
-    }
-    return result;
-  }
-
 } // anonymous namespace
-
-std::string make_relative(const std::string& from, const std::string& to)
-{
-  return make_relative(std::tr2::sys::path{from}, std::tr2::sys::path{to}).string();
-}
 
 bool is_image(const std::string& path)
 {
@@ -311,11 +283,11 @@ void search_resources(trance_pb::Session& session, const std::string& root)
   static const std::string wildcards = "/wildcards/";
   auto& themes = *session.mutable_theme_map();
 
-  std::tr2::sys::path root_path(root);
-  for (auto it = std::tr2::sys::recursive_directory_iterator(root_path);
-       it != std::tr2::sys::recursive_directory_iterator(); ++it) {
-    if (std::tr2::sys::is_regular_file(it->status())) {
-      auto relative_path = make_relative(root_path, it->path());
+  boost::filesystem::path root_path(root);
+  for (auto it = boost::filesystem::recursive_directory_iterator(root_path);
+       it != boost::filesystem::recursive_directory_iterator(); ++it) {
+    if (boost::filesystem::is_regular_file(it->status())) {
+      auto relative_path = boost::filesystem::relative(it->path(), root_path);
       auto jt = ++relative_path.begin();
       if (jt == relative_path.end()) {
         continue;
@@ -326,7 +298,7 @@ void search_resources(trance_pb::Session& session, const std::string& root)
       if (is_font(rel_str)) {
         themes[theme_name].add_font_path(rel_str);
       } else if (is_text_file(rel_str)) {
-        std::ifstream f(it->path());
+        std::ifstream f(it->path().string());
         std::string line;
         while (std::getline(f, line)) {
           if (!line.length()) {
@@ -380,15 +352,11 @@ void search_resources(trance_pb::Session& session, const std::string& root)
 
 void search_resources(trance_pb::Theme& theme, const std::string& root)
 {
-  std::tr2::sys::path root_path(root);
-  for (auto it = std::tr2::sys::recursive_directory_iterator(root_path);
-       it != std::tr2::sys::recursive_directory_iterator(); ++it) {
-    if (std::tr2::sys::is_regular_file(it->status())) {
-      auto relative_path = make_relative(root_path, it->path());
-      auto jt = ++relative_path.begin();
-      if (jt == relative_path.end()) {
-        continue;
-      }
+  boost::filesystem::path root_path(root);
+  for (auto it = boost::filesystem::recursive_directory_iterator(root_path);
+      it != boost::filesystem::recursive_directory_iterator(); ++it) {
+    if (boost::filesystem::is_regular_file(it->status())) {
+      auto relative_path = boost::filesystem::relative(it->path(), root_path);
       auto rel_str = relative_path.string();
       if (is_font(rel_str)) {
         theme.add_font_path(rel_str);
@@ -403,11 +371,11 @@ void search_resources(trance_pb::Theme& theme, const std::string& root)
 
 void search_audio_files(std::vector<std::string>& files, const std::string& root)
 {
-  std::tr2::sys::path root_path(root);
-  for (auto it = std::tr2::sys::recursive_directory_iterator(root_path);
-       it != std::tr2::sys::recursive_directory_iterator(); ++it) {
-    if (std::tr2::sys::is_regular_file(it->status())) {
-      auto relative_path = make_relative(root_path, it->path());
+  boost::filesystem::path root_path(root);
+  for (auto it = boost::filesystem::recursive_directory_iterator(root_path);
+       it != boost::filesystem::recursive_directory_iterator(); ++it) {
+    if (boost::filesystem::is_regular_file(it->status())) {
+      auto relative_path = boost::filesystem::relative(it->path(), root_path);
       auto jt = ++relative_path.begin();
       if (jt == relative_path.end()) {
         continue;

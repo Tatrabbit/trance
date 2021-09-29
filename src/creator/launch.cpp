@@ -15,7 +15,7 @@
 namespace
 {
   struct TimeBounds {
-    uint64_t min_seconds = -1;
+    uint64_t min_seconds = (uint64_t)-1;
     uint64_t max_seconds = 0;
   };
   struct PlayTime {
