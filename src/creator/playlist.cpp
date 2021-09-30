@@ -228,11 +228,23 @@ void PlaylistPage::RefreshOurData()
     } else if (it->second.has_subroutine()) {
       SwitchToSubroutine();
 
-      for (const auto& subroutine_item : it->second.subroutine().playlist_item_name()) {
-        AddSubroutineItem(subroutine_item);
+      // Build choice list
+      std::vector<std::string> playlist_items;
+      for (const auto& pair : _session.playlist()) {
+        playlist_items.push_back(pair.first);
       }
-      AddSubroutineItem("");
+      std::sort(playlist_items.begin(), playlist_items.end());
+
+
+      for (const auto& subroutine_item : it->second.subroutine().playlist_item_name()) {
+        AddSubroutineChoice(playlist_items, subroutine_item);
+      }
+      AddSubroutineChoice(playlist_items, "");
+
+      _left_panel->Layout();
     }
+
+    _creator_frame.MakeDirty(true);
 
     for (const auto& item : it->second.next_item()) {
       AddNextItem(item.playlist_item_name(), item.random_weight(), item.condition_variable_name(),
@@ -281,7 +293,7 @@ void PlaylistPage::SwitchToStandard()
   _playlist_item_sizer->Clear(true);
   _program = nullptr;
   _play_time_seconds = nullptr;
-  _subroutine_items.clear();
+  _subroutine_list = nullptr;
   wxStaticText* label = nullptr;
 
   label = new wxStaticText{_left_panel, wxID_ANY, "Program:"};
@@ -329,60 +341,15 @@ void PlaylistPage::SwitchToSubroutine()
   _playlist_item_sizer->Clear(true);
   _program = nullptr;
   _play_time_seconds = nullptr;
-  _subroutine_items.clear();
 
   auto label = new wxStaticText{_left_panel, wxID_ANY, "Subroutine playlist items:"};
   label->SetToolTip(SUBROUTINE_TOOLTIP);
   _playlist_item_sizer->Add(label, 0, wxALL, DEFAULT_BORDER);
+
+  _subroutine_list = new SubroutineList(_left_panel, wxID_ANY);
+  _playlist_item_sizer->Add(_subroutine_list, 0, wxALL|wxEXPAND, DEFAULT_BORDER);
+
   RefreshProgramsAndPlaylists();
-}
-
-void PlaylistPage::AddSubroutineItem(const std::string& playlist_item_name)
-{
-  auto choice = new wxChoice{_left_panel, wxID_ANY};
-  choice->SetToolTip(SUBROUTINE_ITEM_TOOLTIP);
-  _playlist_item_sizer->Add(choice, 0, wxALL | wxEXPAND, DEFAULT_BORDER);
-
-  std::vector<std::string> playlist_items;
-  for (const auto& pair : _session.playlist()) {
-    playlist_items.push_back(pair.first);
-  }
-  std::sort(playlist_items.begin(), playlist_items.end());
-  choice->Append("");
-  int i = 1;
-  for (const auto& item_name : playlist_items) {
-    choice->Append(item_name);
-    if (item_name == playlist_item_name) {
-      choice->SetSelection(i);
-    }
-    ++i;
-  }
-  if (playlist_item_name.empty()) {
-    choice->SetSelection(0);
-  }
-
-  auto index = _subroutine_items.size();
-  _subroutine_items.push_back(choice);
-  _left_panel->Layout();
-
-  choice->Bind(wxEVT_CHOICE, [&, index, choice](wxCommandEvent&) {
-    auto it = _session.mutable_playlist()->find(_item_selected);
-    if (it == _session.mutable_playlist()->end()) {
-      return;
-    }
-    std::string name = choice->GetString(choice->GetSelection());
-    if (name != "") {
-      while (it->second.subroutine().playlist_item_name_size() <= int(index)) {
-        it->second.mutable_subroutine()->add_playlist_item_name(name);
-      }
-      it->second.mutable_subroutine()->set_playlist_item_name(int(index), name);
-    } else if (it->second.subroutine().playlist_item_name_size() > int(index)) {
-      it->second.mutable_subroutine()->mutable_playlist_item_name()->erase(
-          index + it->second.mutable_subroutine()->mutable_playlist_item_name()->begin());
-    }
-    _creator_frame.MakeDirty(true);
-    RefreshOurData();
-  });
 }
 
 void PlaylistPage::AddNextItem(const std::string& name, std::uint32_t weight_value,
@@ -717,4 +684,29 @@ void PlaylistPage::AddAudioEvent(const trance_pb::AudioEvent& event)
   sizer->Add(wrap_sizer, 1, wxEXPAND);
   _audio_events_sizer->Add(sizer, 0, wxEXPAND);
   _right_panel->Layout();
+}
+
+void PlaylistPage::AddSubroutineChoice(const std::vector<std::string>& items, const std::string &selected_item)
+{
+  size_t index;
+  auto* choice = _subroutine_list->AddItem(items, selected_item, index);
+
+  choice->Bind(wxEVT_CHOICE, [&, index, choice](wxCommandEvent&) {
+    auto it = _session.mutable_playlist()->find(_item_selected);
+    if (it == _session.mutable_playlist()->end()) {
+      return;
+    }
+    std::string name = choice->GetString(choice->GetSelection());
+    if (name != "") {
+      while (it->second.subroutine().playlist_item_name_size() <= int(index)) {
+        it->second.mutable_subroutine()->add_playlist_item_name(name);
+      }
+      it->second.mutable_subroutine()->set_playlist_item_name(int(index), name);
+    } else if (it->second.subroutine().playlist_item_name_size() > int(index)) {
+      it->second.mutable_subroutine()->mutable_playlist_item_name()->erase(
+          index + it->second.mutable_subroutine()->mutable_playlist_item_name()->begin());
+    }
+    _creator_frame.MakeDirty(true);
+    RefreshOurData();
+  });
 }

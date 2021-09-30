@@ -7,6 +7,8 @@
 #include <wx/notebook.h>
 #pragma warning(pop)
 
+#include "subroutine_list.h"
+
 namespace trance_pb
 {
   class AudioEvent;
@@ -37,7 +39,7 @@ public:
 private:
   void SwitchToStandard();
   void SwitchToSubroutine();
-  void AddSubroutineItem(const std::string& playlist_item_name);
+  void AddSubroutineChoice(const std::vector<std::string>& items, const std::string& selected_item);
   void AddNextItem(const std::string& name, std::uint32_t weight_value, const std::string& variable,
                    const std::string& variable_value);
   void AddAudioEvent(const trance_pb::AudioEvent& event);
@@ -60,7 +62,7 @@ private:
   wxBoxSizer* _playlist_item_sizer;
   wxBoxSizer* _next_items_sizer;
   wxBoxSizer* _audio_events_sizer;
-  std::vector<wxChoice*> _subroutine_items;
+  SubroutineList* _subroutine_list;
   std::vector<wxBoxSizer*> _next_items;
   std::vector<wxBoxSizer*> _audio_events;
 };

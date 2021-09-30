@@ -37,6 +37,9 @@
     <ClCompile Include="src\common\media\streamer.cpp">
       <Filter>common\media</Filter>
     </ClCompile>
+    <ClCompile Include="src\creator\subroutine_list.cpp">
+      <Filter>creator</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\jpgd\jpgd.h">
@@ -83,6 +86,9 @@
     </ClInclude>
     <ClInclude Include="src\common\media\streamer.h">
       <Filter>common\media</Filter>
+    </ClInclude>
+    <ClInclude Include="src\creator\subroutine_list.h">
+      <Filter>creator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

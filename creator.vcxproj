@@ -198,6 +198,7 @@
     <ClCompile Include="src\creator\playlist.cpp" />
     <ClCompile Include="src\creator\program.cpp" />
     <ClCompile Include="src\creator\settings.cpp" />
+    <ClCompile Include="src\creator\subroutine_list.cpp" />
     <ClCompile Include="src\creator\theme.cpp" />
     <ClCompile Include="src\creator\variables.cpp" />
     <ClCompile Include="src\jpgd\jpgd.cpp" />
@@ -215,6 +216,7 @@
     <ClInclude Include="src\creator\playlist.h" />
     <ClInclude Include="src\creator\program.h" />
     <ClInclude Include="src\creator\settings.h" />
+    <ClInclude Include="src\creator\subroutine_list.h" />
     <ClInclude Include="src\creator\theme.h" />
     <ClInclude Include="src\creator\variables.h" />
     <ClInclude Include="src\jpgd\jpgd.h" />
